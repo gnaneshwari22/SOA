@@ -1,6 +1,0 @@
-{
-  "name": "AccidentCascade AI - Indian Traffic CV Risk System",
-  "description": "Real-time Indian traffic video analysis pipeline with vehicle detection, tracking, interaction dynamics, and cascade crash risk early warning.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
