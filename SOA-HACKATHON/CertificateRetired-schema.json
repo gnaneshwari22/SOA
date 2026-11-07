@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://soa.team17.org/schemas/CertificateRetired.v1.json",
+  "title": "CertificateRetired",
+  "description": "Domain event published when a renewable energy certificate is permanently retired against a claim.",
+  "type": "object",
+  "required": [
+    "eventId",
+    "aggregateId",
+    "schemaVersion",
+    "occurredAt",
+    "correlationId",
+    "eventType",
+    "payload"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique UUID for deduplication across consumer restarts"
+    },
+    "aggregateId": {
+      "type": "string",
+      "description": "Certificate serial number used as Kafka partition message key"
+    },
+    "schemaVersion": {
+      "type": "string",
+      "enum": ["1.0.0"]
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "correlationId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Traceability ID propagating through REST gateway to Kafka event"
+    },
+    "eventType": {
+      "type": "string",
+      "enum": ["CertificateRetired"]
+    },
+    "payload": {
+      "type": "object",
+      "required": [
+        "serialNumber",
+        "claimReference",
+        "claimantOrganization",
+        "energyQuantityMWh",
+        "energySource",
+        "retirementTimestamp",
+        "retiredBy"
+      ],
+      "properties": {
+        "serialNumber": { "type": "string" },
+        "claimReference": { "type": "string" },
+        "claimantOrganization": { "type": "string" },
+        "energyQuantityMWh": { "type": "number", "minimum": 1 },
+        "energySource": { "type": "string", "enum": ["Solar", "Wind", "Hydro", "Geothermal", "Biomass"] },
+        "retirementTimestamp": { "type": "string", "format": "date-time" },
+        "retiredBy": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,33 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: AUTH-SERVICE
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/auth_db}
+    username: ${SPRING_DATASOURCE_USERNAME:soa_auth_user}
+    password: ${SPRING_DATASOURCE_PASSWORD:soa_auth_pass_2026}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
+
+jwt:
+  secret: ${JWT_SECRET:soa-team17-secret-key-2026-jwt-token-signing-key-production}
+  expiration-ms: 28800000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

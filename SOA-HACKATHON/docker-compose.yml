@@ -1,0 +1,181 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # SERVICE DISCOVERY & GATEWAY
+  # ==========================================
+  eureka-server:
+    build:
+      context: ../backend/eureka-server
+    container_name: soa-eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api-gateway:
+    build:
+      context: ../backend/api-gateway
+    container_name: soa-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_URI=http://eureka-server:8761/eureka/
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+
+  # ==========================================
+  # APACHE KAFKA CLUSTER
+  # ==========================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: soa-zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: soa-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    depends_on:
+      - zookeeper
+
+  # ==========================================
+  # ISOLATED POSTGRESQL DATABASES (One DB Per Service)
+  # ==========================================
+  postgres-auth:
+    image: postgres:16-alpine
+    container_name: soa-postgres-auth
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: soa_auth_user
+      POSTGRES_PASSWORD: soa_auth_pass_2026
+    volumes:
+      - auth_db_data:/var/lib/postgresql/data
+
+  postgres-certificate:
+    image: postgres:16-alpine
+    container_name: soa-postgres-cert
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: certificate_db
+      POSTGRES_USER: soa_cert_user
+      POSTGRES_PASSWORD: soa_cert_pass_2026
+    volumes:
+      - cert_db_data:/var/lib/postgresql/data
+
+  postgres-ownership:
+    image: postgres:16-alpine
+    container_name: soa-postgres-owner
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: ownership_db
+      POSTGRES_USER: soa_owner_user
+      POSTGRES_PASSWORD: soa_owner_pass_2026
+    volumes:
+      - owner_db_data:/var/lib/postgresql/data
+
+  postgres-retirement:
+    image: postgres:16-alpine
+    container_name: soa-postgres-retire
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: retirement_db
+      POSTGRES_USER: soa_retire_user
+      POSTGRES_PASSWORD: soa_retire_pass_2026
+    volumes:
+      - retire_db_data:/var/lib/postgresql/data
+
+  # ==========================================
+  # DOMAIN SPRING BOOT MICROSERVICES
+  # ==========================================
+  auth-service:
+    build:
+      context: ../backend/auth-service
+    container_name: soa-auth-service
+    environment:
+      - EUREKA_URI=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-auth:5432/auth_db
+    depends_on:
+      - postgres-auth
+      - eureka-server
+
+  # Domain Service Instance 1
+  certificate-service-1:
+    build:
+      context: ../backend/certificate-service
+    container_name: soa-cert-service-1
+    environment:
+      - SERVER_PORT=8082
+      - EUREKA_URI=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-certificate:5432/certificate_db
+    depends_on:
+      - postgres-certificate
+      - eureka-server
+
+  # Domain Service Instance 2 (Demonstration of Multi-Instance Load Balancing & Resilience)
+  certificate-service-2:
+    build:
+      context: ../backend/certificate-service
+    container_name: soa-cert-service-2
+    environment:
+      - SERVER_PORT=8085
+      - EUREKA_URI=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-certificate:5432/certificate_db
+    depends_on:
+      - postgres-certificate
+      - eureka-server
+
+  ownership-service:
+    build:
+      context: ../backend/ownership-service
+    container_name: soa-ownership-service
+    environment:
+      - EUREKA_URI=http://eureka-server:8761/eureka/
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-ownership:5432/ownership_db
+    depends_on:
+      - postgres-ownership
+      - kafka
+      - eureka-server
+
+  retirement-service:
+    build:
+      context: ../backend/retirement-service
+    container_name: soa-retirement-service
+    environment:
+      - EUREKA_URI=http://eureka-server:8761/eureka/
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-retirement:5432/retirement_db
+    depends_on:
+      - postgres-retirement
+      - kafka
+      - eureka-server
+
+volumes:
+  auth_db_data:
+  cert_db_data:
+  owner_db_data:
+  retire_db_data:

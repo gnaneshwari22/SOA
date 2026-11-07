@@ -1,0 +1,55 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: API-GATEWAY
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: auth-service
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/auth/**
+
+        - id: certificate-service
+          uri: lb://CERTIFICATE-SERVICE
+          predicates:
+            - Path=/api/certificates/**
+
+        - id: ownership-service
+          uri: lb://OWNERSHIP-SERVICE
+          predicates:
+            - Path=/api/ownership/**
+
+        - id: retirement-service
+          uri: lb://RETIREMENT-SERVICE
+          predicates:
+            - Path=/api/retirements/**
+
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway

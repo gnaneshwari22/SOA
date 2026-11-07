@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+  }
+
+  /* Enforce tabular numbers for all numerical metrics & tables */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Print-specific layout rules */
+@media print {
+  /* Hide all dashboard chrome, navigation, tables, and modal backgrounds */
+  body {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide everything except the dedicated print container */
+  nav,
+  header,
+  footer,
+  aside,
+  .no-print,
+  button,
+  input {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  #printable-certificate {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 24px !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border: 3px double #059669 !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+    visibility: visible !important;
+  }
+
+  #printable-certificate * {
+    visibility: visible !important;
+    color: #0f172a !important;
+  }
+
+  #printable-certificate .text-emerald-400,
+  #printable-certificate .text-emerald-500,
+  #printable-certificate .text-emerald-600 {
+    color: #059669 !important;
+  }
+
+  #printable-certificate .text-slate-400,
+  #printable-certificate .text-slate-500 {
+    color: #475569 !important;
+  }
+
+  #printable-certificate .bg-slate-950,
+  #printable-certificate .bg-slate-900 {
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+  }
+}
+
